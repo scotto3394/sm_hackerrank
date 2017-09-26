@@ -3,6 +3,9 @@
 //!
 //! This file focuses on the `Warmup` subtrack.
 pub mod implementation;
+pub mod bit_manipulation;
+pub mod sorting;
+pub mod recursion;
 
 /// Builds a staircase from #.
 pub fn staircase(n: u8) -> String {

@@ -20,7 +20,7 @@ pub fn grading_students(n: Vec<u32>) -> Vec<u32> {
     }
     m
 }
-
+//-----------------------------------------------------
 /// Count apples and oranges hitting a house.
 pub fn apples_oranges(
     house: Vec<i32>,
@@ -38,7 +38,7 @@ pub fn apples_oranges(
     let orange_count = count_list(oranges, 1);
     vec![apple_count, orange_count]
 }
-
+//-----------------------------------------------------
 /// Find values `in between` two sets.
 pub fn between_sets(a: Vec<u32>, b: Vec<u32>) -> u32 {
     let step = *(a.iter().max().unwrap()) as usize;
@@ -56,7 +56,7 @@ pub fn between_sets(a: Vec<u32>, b: Vec<u32>) -> u32 {
     }
     solution
 }
-
+//-----------------------------------------------------
 /// Count number of new maximums and new minimums.
 pub fn break_records(n: Vec<u64>) -> (u64, u64) {
     let mut max_val = n[0];
@@ -76,7 +76,7 @@ pub fn break_records(n: Vec<u64>) -> (u64, u64) {
     }
     (break_max, break_min)
 }
-
+//-----------------------------------------------------
 /// Sliding window sum of an array.
 pub fn birthday_chocolate(n: Vec<u8>, day: u8, month: u8) -> u8 {
     let window = month as usize;
@@ -98,7 +98,7 @@ pub fn birthday_chocolate(n: Vec<u8>, day: u8, month: u8) -> u8 {
     }
     solution
 }
-
+//-----------------------------------------------------
 /// Find sum-pairs in an array, divisible by k.
 pub fn sum_pairs(k: u16, a: Vec<u16>) -> u16 {
     let mut solution = 0;
@@ -112,7 +112,7 @@ pub fn sum_pairs(k: u16, a: Vec<u16>) -> u16 {
     }
     solution
 }
-
+//-----------------------------------------------------
 /// Bin an array, then find largest bin.
 pub fn migratory_birds(n: Vec<usize>) -> usize {
     let mut counter: [u64; 5] = [0; 5];
@@ -129,6 +129,121 @@ pub fn migratory_birds(n: Vec<usize>) -> usize {
     }
     max_index + 1
 }
+//-----------------------------------------------------
+
+
+pub struct Cycle {
+    layers: usize,
+    dimensions: [usize; 2],
+    lengths: Vec<usize>,
+    cycles: Vec<Vec<u64>>,
+}
+
+impl Cycle {
+    ///Convert a matrix into a Cycle struct
+    pub fn new(m: usize, n: usize, a: Vec<u64>) -> Cycle {
+        let layers: usize = if n < m { n / 2 } else { m / 2 };
+        let mut height = m;
+        let mut width = n;
+        let matrix_get = |a: &Vec<u64>, i: usize, j: usize| -> u64 { a[j + n * i] };
+        let mut lengths = Vec::new();
+        let mut cycles = Vec::new();
+        for shell in 0..layers {
+            let mut cycle = Vec::new();
+            //Left side
+            for i in 0..(height - 1) {
+                cycle.push(matrix_get(&a, i + shell, shell));
+            }
+            //Bottom side
+            for j in 0..(width - 1) {
+                cycle.push(matrix_get(&a, (height - 1) + shell, j + shell));
+            }
+            //Right side
+            for i in (1..height).rev() {
+                cycle.push(matrix_get(&a, i + shell, (width - 1) + shell));
+            }
+            //Top side
+            for j in (1..width).rev() {
+                cycle.push(matrix_get(&a, shell, j + shell));
+            }
+
+            //Update relevant variables
+            lengths.push(2 * (height - 1) + 2 * (width - 1));
+            cycles.push(cycle);
+            height -= 2;
+            width -= 2;
+        }
+
+        Cycle {
+            layers: layers,
+            dimensions: [m, n],
+            lengths: lengths,
+            cycles: cycles,
+        }
+    }
+
+    ///Rotate the matrix counterclockwise, r times.
+    pub fn rotate(&mut self, r: usize) {
+        let mut new_cycles = Vec::new();
+        for i in 0..self.layers {
+            //Rotate each layer
+            let cycle = &self.cycles[i];
+            let length_i = self.lengths[i];
+            let mut new_cycle = vec![0; length_i];
+
+            for j in 0..length_i {
+                //Assign elements in each layer to future rotation.
+                let new_index = (j + r) % length_i;
+                new_cycle[new_index] = cycle[j]
+            }
+            new_cycles.push(new_cycle);
+        }
+        self.cycles = new_cycles;
+    }
+
+    ///Print matrix
+    pub fn get_mat(&self) -> Vec<u64> {
+        let mut height = self.dimensions[0];
+        let n = self.dimensions[1];
+        let mut width = n;
+        let mut matrix: Vec<u64> = vec![0; height * width];
+
+        for shell in 0..self.layers {
+            let mut index = 0;
+            let cycle = &self.cycles[shell];
+            //Left side
+            for i in 0..(height - 1) {
+                let new_index = shell + (i + shell) * n;
+                matrix[new_index] = cycle[index];
+                index += 1;
+            }
+            //Bottom side
+            for j in 0..(width - 1) {
+                let new_index = (j + shell) + (height - 1 + shell) * n;
+                matrix[new_index] = cycle[index];
+                index += 1;
+            }
+            //Right side
+            for i in (1..height).rev() {
+                let new_index = (width - 1 + shell) + (i + shell) * n;
+                matrix[new_index] = cycle[index];
+                index += 1;
+            }
+            //Top side
+            for j in (1..width).rev() {
+                let new_index = (j + shell) + shell * n;
+                matrix[new_index] = cycle[index];
+                index += 1;
+            }
+
+            //Update relevant variables
+            height -= 2;
+            width -= 2;
+        }
+        matrix
+    }
+}
+
 
 
 #[cfg(test)]
@@ -200,5 +315,19 @@ mod tests {
         let solution = 4;
 
         assert_eq!(solution, migratory_birds(n));
+    }
+
+    #[test]
+    fn test_matrix_rotation() {
+        let m = 4;
+        let n = 4;
+        let r = 1;
+        let a = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+
+        let solution = vec![2, 3, 4, 8, 1, 7, 11, 12, 5, 6, 10, 16, 9, 13, 14, 15];
+        let mut test = Cycle::new(m, n, a);
+        test.rotate(r);
+        assert_eq!(solution, test.get_mat());
+
     }
 }
